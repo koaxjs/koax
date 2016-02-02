@@ -8,7 +8,7 @@
 
 Powerful and testable control flow inspired by co, koa and redux and in pursuit of free monads.
 
-Koax makes it easy to build a modular recursive interpreter through the use of middleware and yields. The middleware's signature looks like: `middleware (action, next, ctx)`. This works similar to the way redux middleware works - you can return a result or defer to the next middleware by returning `next()`. Middleware can be functions or generators. If it is a generator, it can leverage `yield` to `dispatch` values back through the middleware stack, with special support for generators, functors, promises, and thunks.
+Koax makes it easy to build a modular recursive interpreter through the use of middleware and yields. Middleware let's us build modular composable units for the interpreter. While yield is leveraged to recursively dispatch actions back through the middleware stack.
 
 ## Installation
 
@@ -67,6 +67,12 @@ function * middleware (action, next, ctx) {
 ### next()
 
 `next` is simply a function that calls the next middleware with `action`, `next`, and `ctx` already bound. Since koax handles (yield *s) generators that are yielded or returned, each middleware can be either a function or generator and they will work as expected.
+
+### yield
+
+Yield dispatches actions to the top of the middleware stack. Koax will handle "yieldables" (as defined by co) specially, with the intent of making them feel similar co. Objects are excluded from "yieldables" in koax, because object is the primary type used for standard actions.
+
+In addition to the standard "yieldables", koax can more generally process functors ... (more documentation on functors to come).
 
 ## License
 
