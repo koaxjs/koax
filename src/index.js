@@ -2,7 +2,7 @@
  * Imports
  */
 
-import compose from 'koax-compose'
+import compose from '@koax/compose'
 import toPromise from '@f/to-promise'
 import map from '@f/map'
 import isIterator from '@f/is-iterator'
