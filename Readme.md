@@ -49,6 +49,13 @@ app('foo').then((res) => res) // => 'foo google'
 
 **Returns:** koax app
 
+### .bind(ctx)
+
+- `ctx` - bind koax app to a `ctx` - `ctx` can be accessed with `this` in all middleware
+
+**Returns:** koax app
+
+## Concepts
 
 ### middleware(action, next)
 
