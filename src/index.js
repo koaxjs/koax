@@ -2,33 +2,42 @@
  * Imports
  */
 
+import bind from '@koax/bind'
 import compose from '@koax/compose'
-import toPromise from '@f/to-promise'
-import map from '@f/map'
-import isIterator from '@f/is-iterator'
-import isGenerator from '@f/is-generator'
-import isPromise from '@f/is-promise'
-import isFunctor from '@f/is-functor'
-import isFunction from '@f/is-function'
+import middleware from '@f/middleware'
+import isGlobal from '@f/is-global'
 
 /**
- * koax
+ * ware
  */
 
-function koax (middleware) {
-  let composed = compose(middleware)
-  return dispatch
+function koax () {
+  let app  = middleware(maybeBind)
 
-  function dispatch (action) {
-    if (isFunctor(action) || isGenerator(action) || isIterator(action)) {
-      return toPromise(map(dispatch, action))
-    } else if (isPromise(action) || isFunction(action)) {
-      return toPromise(action)
-    } else {
-      return dispatch(composed(action))
+  // use bind instead of maybeBind for middleware composition
+  app.bind = function (ctx) {
+    return app.replace(bind.bind(null, ctx))
+  }
+
+  return app
+
+  // bind if root koax, otherwise compose
+  function maybeBind (middleware) {
+    let composed
+    return function (action, next) {
+      if (!composed) {
+        if (isGlobal(this)) {
+          composed = bind(middleware)
+        } else {
+          composed = compose(middleware)
+        }
+      }
+      return composed.call(this, action, next)
     }
   }
 }
+
+
 
 /**
  * Exports

@@ -9,121 +9,67 @@ import koax from '../src'
  * Tests
  */
 
-test('should handle action', (t) => {
-  t.plan(3)
-  let dispatch = koax([
-    function (action, next) {
-      if (action === 'foo') return 'bar'
-      if (action === 'qux') return next()
-    }
-  ])
-
-  dispatch('foo').then(function (res) {
-    t.equal(res, 'bar')
-  })
-
-  dispatch('qux').then(function (res) {
-    t.equal(res, 'qux')
-  })
-
-  dispatch('woot').then(function (res) {
-    t.equal(res, undefined)
-  })
-})
-
-test('should dispatch yielded action', (t) => {
-  t.plan(3)
-  let dispatch = koax([
-    function * (action, next) {
-      if (action === 'foo') return 'foo ' + (yield 'bar')
-      if (action === 'bar') return 'qux'
-      else return 'woot'
-    }
-  ])
-
-  dispatch('bar').then(function (res) {
-    t.equal(res, 'qux')
-  })
-
-  dispatch('zoot').then(function (res) {
-    t.equal(res, 'woot')
-  })
-
-  dispatch('foo').then(function (res) {
-    t.equal('foo qux', res)
-  })
-})
-
-test('should reolve yielded promise', (t) => {
+test('should dispatch', (t) => {
   t.plan(2)
-  let dispatch = koax([
-    function * (action, next) {
-      if (action === 'foo') return yield Promise.resolve('bar')
-      return 'qux'
-    }
-  ])
 
-  dispatch('foo').then(function (res) {
-    t.equal(res, 'bar')
+  let app = koax()
+
+  app.use(function * (action, next) {
+    if (action === 'foo') return 'bar'
+    return next()
   })
 
-  dispatch('bar').then(function (res) {
-    t.equal(res, 'qux')
-  })
+  app('foo').then((res) => t.equal(res, 'bar'))
+  app('qux').then((res) => t.equal(res, 'qux'))
+
 })
 
-test('should resolve yielded action promise', (t) => {
+test('should be mountable', (t) => {
   t.plan(3)
-  let dispatch = koax([
-    function * (action, next) {
-      if (action === 'fetch') return yield Promise.resolve('google')
-      return next()
-    },
-    function * (action, next) {
-      if (action === 'foo') return 'foo ' + (yield 'fetch')
-      return 'qux'
-    }
-  ])
 
-  dispatch('foo').then(function (res) {
-    t.equal(res, 'foo google')
+  let root = koax()
+
+  let child1 = koax()
+  child1.use(function * (action, next) {
+    if (action === 'foo') return 'bar'
+    return next()
+  })
+  let child2 = koax()
+  child2.use(function * (action, next) {
+    if (action === 'qux') return 'bat'
+    return next()
   })
 
-  dispatch('fetch').then(function (res) {
-    t.equal(res, 'google')
-  })
+  root.use(child1)
+  root.use(child2)
 
-  dispatch('bar').then(function (res) {
-    t.equal(res, 'qux')
-  })
+  root('foo').then((res) => t.equal(res, 'bar'))
+  root('qux').then((res) => t.equal(res, 'bat'))
+  root('woot').then((res) => t.equal(res, 'woot'))
 })
 
-test('should resolve array of action promisises', (t) => {
+test('should be able to access context from deeply nested middleware', (t) => {
   t.plan(3)
-  let dispatch = koax([
-    function * (action, next) {
-      if (action === 'fetch') return yield Promise.resolve('google')
-      return next()
-    },
-    function * (action, next) {
-      if (action === 'post') return yield Promise.resolve('updated')
-      return next()
-    },
-    function * (action, next) {
-      if (action === 'foo') return yield ['fetch', 'post']
-      return 'qux'
-    }
-  ])
 
-  dispatch('foo').then(function (res) {
-    t.deepEqual(res, ['google', 'updated'])
-  })
+  let root = koax()
 
-  dispatch('fetch').then(function (res) {
-    t.equal(res, 'google')
+  let child1 = koax()
+  child1.use(function * (action, next) {
+    if (action === 'foo') return 'bar'
+    return next()
   })
+  let child2 = koax()
+  child2.use(function * (action, next) {
+    if (action === 'qux') return 'bat' + this.fetched
+    return next()
+  })
+  child1.use(child2)
+  root.use(child1)
 
-  dispatch('post').then(function (res) {
-    t.equal(res, 'updated')
-  })
+  root.bind({fetched: 'google'})
+
+  console.log('dispatch')
+  root('foo').then((res) => t.equal(res, 'bar'))
+  root('qux').then((res) => t.equal(res, 'batgoogle'))
+  root('woot').then((res) => t.equal(res, 'woot'))
 })

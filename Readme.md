@@ -19,36 +19,41 @@ Koax makes it easy to build a modular recursive interpreter through the use of m
 ```js
 import koax from 'koax'
 
-let dispatch = koax([
-  function * (action, next) {
-    if (action === 'fetch') return yield Promise.resolve('google')
-    return next()
-  },
-  function * (action, next) {
-    if (action === 'foo') return 'foo ' + (yield 'fetch')
-    return 'qux'
-  }
-])
+let app = koax()
 
-dispatch('fetch').then((res) => res) // => 'google'
-dispatch('bar').then((res) => res) // => 'qux'
-dispatch('foo').then((res) => res) // => 'foo google'
+app.use(function * (action, next) {
+  if (action === 'fetch') return yield Promise.resolve('google')
+  return next()
+})
+
+app.use(function * (action, next) {
+  if (action === 'foo') return 'foo ' + (yield 'fetch')
+  return 'qux'
+})
+
+app('fetch').then((res) => res) // => 'google'
+app('bar').then((res) => res) // => 'qux'
+app('foo').then((res) => res) // => 'foo google'
 
 ```
 
 ## API
 
-### koax(middleware)
+### koax()
 
-- `middleware` - and array of middleware
+**Returns:** a koax app
 
-**Returns:** a dispatch function
+### .use(middleware)
 
-### middleware(action, next, ctx)
+- `middleware` - add middleware to koax app
+
+**Returns:** koax app
+
+
+### middleware(action, next)
 
 - `action` - an action that middleware can process (preferably treat as immutable)
 - `next` - a function that passes execution to next middleware (can `yield` or `return`)
-- `ctx` - a global persistent mutable object (be careful - used for things like state)
 
 **Returns:** whatever your heart desires or `next()` to defer to the next middleware
 
@@ -66,7 +71,7 @@ function * middleware (action, next, ctx) {
 
 ### next()
 
-`next` is simply a function that calls the next middleware with `action`, `next`, and `ctx` already bound. Since koax handles (yield *s) generators that are yielded or returned, each middleware can be either a function or generator and they will work as expected.
+`next` is simply a function that calls the next middleware with `action` and `next` already bound. Since koax handles generators that are yielded or returned, each middleware can be either a function or generator and they will work as expected.
 
 ### yield
 
