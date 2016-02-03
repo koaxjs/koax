@@ -84,7 +84,30 @@ function * middleware (action, next, ctx) {
 
 Yield dispatches actions to the top of the middleware stack. Koax will handle "yieldables" (as defined by co) specially, with the intent of making them feel similar co. Objects are excluded from "yieldables" in koax, because object is the primary type used for standard actions.
 
-In addition to the standard "yieldables", koax can more generally process functors ... (more documentation on functors to come).
+In addition to the standard "yieldables", koax can more generally process functors ...
+
+
+### Functors
+Functors implement map.
+
+An array is a functor. A plain object is not. This is good because, we don't want koax to do anything special with plain objects. We can however, coerce plain objects into functors, letting you define custom behavior for "yieldables". Here's an example:
+
+```js
+import koax from 'koax'
+import fetchW, {fetch} from '@koax/fetch'
+import ObjectF from '@f/obj-functor'
+
+let app = koax()
+
+app.use(fetchW)
+
+dispatch(function * () {
+  yield ObjectF({
+    google: fetch('google.com'),
+    facebook: fetch('facebook.com')
+  }) // => {google: google, facebook: facebook}
+})
+```
 
 ## License
 
