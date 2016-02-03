@@ -5,7 +5,6 @@
 import bind from '@koax/bind'
 import compose from '@koax/compose'
 import middleware from '@f/middleware'
-import isGlobal from '@f/is-global'
 
 /**
  * ware
@@ -16,7 +15,7 @@ function koax () {
 
   // use bind instead of maybeBind for middleware composition
   app.bind = function (ctx) {
-    return app.replace(bind.bind(null, ctx))
+    return app.replace(bind(ctx))
   }
 
   return app
@@ -24,15 +23,15 @@ function koax () {
   // bind if root koax, otherwise compose
   function maybeBind (middleware) {
     let composed
-    return function (action, next) {
+    return function (action, next, ctx) {
       if (!composed) {
-        if (isGlobal(this)) {
-          composed = bind(middleware)
+        if (!ctx) {
+          composed = bind(ctx)(middleware)
         } else {
           composed = compose(middleware)
         }
       }
-      return composed.call(this, action, next)
+      return composed(action, next, ctx)
     }
   }
 }

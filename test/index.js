@@ -59,8 +59,8 @@ test('should be able to access context from deeply nested middleware', (t) => {
     return next()
   })
   let child2 = koax()
-  child2.use(function * (action, next) {
-    if (action === 'qux') return 'bat' + this.fetched
+  child2.use(function * (action, next, ctx) {
+    if (action === 'qux') return 'bat' + ctx.fetched
     return next()
   })
   child1.use(child2)
@@ -68,7 +68,6 @@ test('should be able to access context from deeply nested middleware', (t) => {
 
   root.bind({fetched: 'google'})
 
-  console.log('dispatch')
   root('foo').then((res) => t.equal(res, 'bar'))
   root('qux').then((res) => t.equal(res, 'batgoogle'))
   root('woot').then((res) => t.equal(res, 'woot'))

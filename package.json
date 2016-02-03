@@ -11,10 +11,9 @@
     "postversion": "git push && git push --tags && npm publish --access=public"
   },
   "dependencies": {
-    "@f/is-global": "^1.0.0",
     "@f/middleware": "^1.1.0",
-    "@koax/bind": "^0.2.0",
-    "@koax/compose": "^0.2.0"
+    "@koax/bind": "^0.3.2",
+    "@koax/compose": "^0.3.1"
   },
   "devDependencies": {
     "babel-cli": "^6.4.0",
