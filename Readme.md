@@ -10,7 +10,7 @@ Powerful and testable control flow inspired by co, koa and redux and in pursuit 
 
 This is my 3rd attempt at a free monad style library. The first two ([redux-gen](//github.com/joshrtay/redux-gen) and [redux-flo](github.com/redux-effects/redux-flo)) were attempts at making redux good at control flow. I really like redux middleware. Recursive dispatch and the functional nature of the middleware allowed for the creation of powerful interpreters. But ultimately, things are just easier with generator middleware.
 
-Koax is a combination of koa and redux middleware. Koax makes it easy to build a modular recursive interpreter through the use of generator middleware and yields. Middleware looks very similar to koa middleware - receiving an action and a next. The cool part about koax is that yield is leveraged to recursively dispatch actions back through the middleware stack as well as asynchronously process "yieldables". 
+Koax is a combination of koa and redux middleware. Koax makes it easy to build a modular recursive interpreter through the use of generator middleware and yields. Middleware looks very similar to koa middleware - receiving an action and a next. The cool part about koax is that yield is leveraged to recursively dispatch actions back through the middleware stack as well as asynchronously process "yieldables". Koax also has the added benefit of not being tied to http requests - allowing you to control dispatches to the middleware stack.
 
 ## Installation
 
@@ -53,16 +53,17 @@ app('foo').then((res) => res) // => 'foo google'
 
 ### .bind(ctx)
 
-- `ctx` - bind koax app to a `ctx` - `ctx` can be accessed with `this` in all middleware
+- `ctx` - bind koax app to a `ctx` - `ctx` can be accessed with the third argument in all middleware
 
 **Returns:** koax app
 
 ## Concepts
 
-### middleware(action, next)
+### middleware(action, next, ctx)
 
 - `action` - an action that middleware can process (preferably treat as immutable)
 - `next` - a function that passes execution to next middleware (can `yield` or `return`)
+- `ctx` - global shared context for all middleware
 
 **Returns:** whatever your heart desires or `next()` to defer to the next middleware
 
