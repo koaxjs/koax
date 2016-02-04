@@ -97,14 +97,14 @@ An array is a functor. A plain object is not. This is good because, we don't wan
 
 ```js
 import koax from 'koax'
-import fetchW, {fetch} from '@koax/fetch'
+import {fetch, fetchEffect} from '@koax/fetch'
 import ObjectF from '@f/obj-functor'
 
 let app = koax()
 
-app.use(fetchW)
+app.use(fetchEffect)
 
-dispatch(function * () {
+app(function * () {
   yield ObjectF({
     google: fetch('google.com'),
     facebook: fetch('facebook.com')
