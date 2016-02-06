@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@f/middleware": "^1.1.0",
-    "@koax/bind": "^0.3.2",
+    "@koax/bind": "^0.3.3",
     "@koax/compose": "^0.3.1"
   },
   "devDependencies": {
