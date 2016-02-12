@@ -13,7 +13,9 @@
   "dependencies": {
     "@f/middleware": "^1.1.0",
     "@koax/bind": "^0.3.3",
-    "@koax/compose": "^0.3.1"
+    "@koax/compose": "^0.3.1",
+    "@koax/default": "^0.1.2",
+    "@koax/fork": "^0.1.2"
   },
   "devDependencies": {
     "babel-cli": "^6.4.0",
