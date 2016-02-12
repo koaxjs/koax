@@ -3,7 +3,8 @@
  */
 
 import test from 'tape'
-import koax, {take, put, fork, join} from '../src'
+import koax, {take, put, fork, join, delay} from '../src'
+import elapsed from '@f/elapsed-time'
 
 /**
  * Tests
@@ -189,4 +190,16 @@ test('should have fork support', (t) => {
     return 'bar'
   }
 
+})
+
+test('should have delay support', (t) => {
+  let dispatch = koax()
+  let time = elapsed()
+  time()
+  dispatch(function * () {
+    yield delay(50)
+  }).then(function () {
+    t.ok(time() > 50)
+    t.end()
+  })
 })
