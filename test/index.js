@@ -3,7 +3,7 @@
  */
 
 import test from 'tape'
-import koax, {take, put} from '../src'
+import koax, {take, put, fork, join} from '../src'
 
 /**
  * Tests
@@ -161,4 +161,30 @@ test('should have channles support', (t) => {
   app(function * () {
     yield put('ch', 42)
   })
+})
+
+test('should have fork support', (t) => {
+  let finished = false
+
+  let app = koax()
+
+  app(function * () {
+    yield fork(getBar)
+    return 'woot'
+  }).then(function (val) {
+    t.equal(val, 'woot')
+    finished = true
+  })
+
+  function * getBar () {
+    let res = yield new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve('foo')
+      }, 5)
+    })
+    t.equal(res, 'foo')
+    t.equal(finished, true)
+    return 'bar'
+  }
+
 })
