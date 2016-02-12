@@ -164,6 +164,8 @@ test('should have channles support', (t) => {
 })
 
 test('should have fork support', (t) => {
+  t.plan(3)
+
   let finished = false
 
   let app = koax()

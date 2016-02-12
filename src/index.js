@@ -46,7 +46,7 @@ let finalize = ctx => middleware => {
   middleware.unshift(channelsEffect())
   middleware.unshift(thunk)
   middleware.unshift(promise)
-  return run(middleware, ctx)
+  return taskRunner(run(middleware, ctx))
 }
 
 
