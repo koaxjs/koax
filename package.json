@@ -2,7 +2,7 @@
   "name": "koax",
   "description": "Control flow inspired by koa and redux and in pursuit of free monads.",
   "repository": "git://github.com/koaxjs/koax.git",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "MIT",
   "main": "lib/index.js",
   "scripts": {
