@@ -3,7 +3,7 @@
  */
 
 import test from 'tape'
-import koax from '../src'
+import koax, {take, put} from '../src'
 
 /**
  * Tests
@@ -71,4 +71,94 @@ test('should be able to access context from deeply nested middleware', (t) => {
   root('foo').then((res) => t.equal(res, 'bar'))
   root('qux').then((res) => t.equal(res, 'batgoogle'))
   root('woot').then((res) => t.equal(res, 'woot'))
+})
+
+
+test('should reolve yielded promise', (t) => {
+  t.plan(2)
+
+  let app = koax()
+  app.use(function * (action, next) {
+    if (action === 'foo') return yield Promise.resolve('bar')
+    return 'qux'
+  })
+
+  app('foo').then(function (res) {
+    t.equal(res, 'bar')
+  })
+
+  app('bar').then(function (res) {
+    t.equal(res, 'qux')
+  })
+})
+
+test('should resolve yielded action promise', (t) => {
+  t.plan(3)
+
+  let app = koax()
+  app.use(function * (action, next) {
+    if (action === 'fetch') return yield Promise.resolve('google')
+    return next()
+  })
+  app.use(function * (action, next) {
+    if (action === 'foo') return 'foo ' + (yield 'fetch')
+    return 'qux'
+  })
+
+  app('foo').then(function (res) {
+    t.equal(res, 'foo google')
+  })
+
+  app('fetch').then(function (res) {
+    t.equal(res, 'google')
+  })
+
+  app('bar').then(function (res) {
+    t.equal(res, 'qux')
+  })
+})
+
+test('should resolve yielded action thunk', (t) => {
+  t.plan(3)
+
+  let app = koax()
+  app.use(function * (action, next) {
+    if (action === 'fetch') return yield thunk
+    return next()
+  })
+  app.use(function * (action, next) {
+    if (action === 'foo') return 'foo ' + (yield 'fetch')
+    return 'qux'
+  })
+
+  function thunk(cb) {
+    cb(null, 'google')
+  }
+
+  app('foo').then(function (res) {
+    t.equal(res, 'foo google')
+  })
+
+  app('fetch').then(function (res) {
+    t.equal(res, 'google')
+  })
+
+  app('bar').then(function (res) {
+    t.equal(res, 'qux')
+  })
+})
+
+test('should have channles support', (t) => {
+  t.plan(1)
+
+  let app = koax()
+
+  app(function * () {
+    let res = yield take('ch')
+    t.equal(res, 42)
+  })
+
+  app(function * () {
+    yield put('ch', 42)
+  })
 })
