@@ -16,11 +16,11 @@ There are a couple ways of thinking about koax. You can think of it as **co**, w
 
 Koax comes with a built-in suite of middleware:
 
-- [promise](//github.com/koax/promise) - promise yielding
-- [thunk](//github.com/koax/thunk) - thunk yielding
-- [channels](//github.com/koax/channels) - csp control flow
-- [timing](//github.com/koax/timing) - delay and timeout
-- [fork](//github.com/koax/fork) - async execution
+- [promise](//github.com/koaxjs/promise) - promise yielding
+- [thunk](//github.com/koaxjs/thunk) - thunk yielding
+- [channels](//github.com/koaxjs/channels) - csp control flow
+- [timing](//github.com/koaxjs/timing) - delay and timeout
+- [fork](//github.com/koaxjs/fork) - async execution
 
 The action creators for these middleware are exposed by koax. They include: `take`, `put`, `close`, `fork`, `join`, `cancel`, `delay`, `timeout`, and `interval`.
 
