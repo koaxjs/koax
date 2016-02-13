@@ -14,7 +14,7 @@
     "@f/middleware": "^1.1.0",
     "@koax/channels": "^0.1.2",
     "@koax/compose": "^0.3.1",
-    "@koax/fork": "^0.1.2",
+    "@koax/fork": "^0.2.0",
     "@koax/promise": "^1.0.0",
     "@koax/run": "^0.2.0",
     "@koax/thunk": "^1.0.1",

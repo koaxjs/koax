@@ -7,7 +7,7 @@ import compose from '@koax/compose'
 import promise from '@koax/promise'
 import thunk from '@koax/thunk'
 import {channelsEffect, take, put, close} from '@koax/channels'
-import {taskRunner, fork, join, cancel} from '@koax/fork'
+import {forkDriver, fork, join, cancel} from '@koax/fork'
 import {timingEffect, delay, timeout, interval} from '@koax/timing'
 import middleware from '@f/middleware'
 
@@ -48,7 +48,7 @@ let finalize = ctx => middleware => {
   middleware.unshift(channelsEffect())
   middleware.unshift(thunk)
   middleware.unshift(promise)
-  return taskRunner(run(middleware, ctx))
+  return forkDriver(run(middleware, ctx))
 }
 
 /**

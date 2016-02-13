@@ -199,7 +199,7 @@ test('should have delay support', (t) => {
   dispatch(function * () {
     yield delay(50)
   }).then(function () {
-    t.ok(time() > 50)
+    t.ok(time() >= 50)
     t.end()
   })
 })
