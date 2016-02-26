@@ -6,62 +6,82 @@
 [![NPM version][npm-image]][npm-url]
 [![Code style][standard-image]][standard-url]
 
-Powerful and testable control flow inspired by co, koa and redux and in pursuit of free monads.
+Simple, powerful and composable interpreters and apps. Inspired by co, koa, and redux.
 
-This is my 3rd attempt at a free monad style library. The first two ([redux-gen](//github.com/joshrtay/redux-gen) and [redux-flo](github.com/redux-effects/redux-flo)) were attempts at making redux good at control flow. I really like redux middleware. Recursive dispatch and the functional nature of the middleware allowed for the creation of powerful interpreters. But ultimately, things are just easier with generator middleware.
+The goal of koax is to make it easy to build large apps where effects are decoupled from application logic. This makes apps easier to test, reason about, and inspect.
 
-Koax makes it easy to build complex interpreters for `yield`. You define your interpreter as a stack of middleware. Middleware looks very similar to koa middleware - receiving an action and a next function. Whenever an action is 'yielded' in either the middleware stack or in a dispatched generator, that action is reprocessed by the middleware stack. This allows you to completely customize the behavior of yield.
+There are three primary concepts in koax: `actions`, `koaxes`, and `interpreters`. Actions are typed payloads of data. Koaxes are generators that receive a single action as input and only yield effect actions. An intepreter processes effect actions.
 
-There are a couple ways of thinking about koax. You can think of it as **co**, with customizable "yieldables". Or you can think of it as similar to **koa** decoupled from http requests. But it's really a combination of the two. I'll add some examples to demonstrate how powerful this model is.
+At the outer most level, koax apps all basically have the same form, where app is a koax and the interpeter is built from a koax.
 
-Koax comes with a built-in suite of middleware:
+```js
+interpet(app(action))
+```
+
+A koax is created by composing koax middleware.
+
+```js
+import koax from 'koax'
+import fetch from '@koax/fetch'
+import aws from '@koax/aws'
+
+let effects = koax()
+  .use(fetch)
+  .use(aws)
+  ...
+```
+
+Koax middleware looks like koa middleware, with three params: `action`, `next`, and `ctx`.
+
+```js
+function (action, next, ctx) {
+  if (action.type === FETCH) {
+    return fetch(action.payoad.ur, action.payload.params)
+  }
+  return next()
+}
+```
+
+We create an interpreter by passing a koax to the interperter.
+
+```js
+import {interpreter} from 'koax'
+
+let interpet = intepreter(effects)
+```
+
+The interpeter adds default effects middleware useful for control flow. These include:
 
 - [promise](//github.com/koaxjs/promise) - promise yielding
 - [thunk](//github.com/koaxjs/thunk) - thunk yielding
-- [channels](//github.com/koaxjs/channels) - csp control flow
 - [timing](//github.com/koaxjs/timing) - delay and timeout
 - [fork](//github.com/koaxjs/fork) - async execution
 
-The action creators for these middleware are exposed by koax. They include: `take`, `put`, `close`, `fork`, `join`, `cancel`, `delay`, `timeout`, and `interval`.
+The action creators for these middleware are exposed by koax. They include: `fork`, `delay`, `join`, and `cancel`.
+
+Now we can create our app and process it using the interpreter. Remember we want our app to be a koax. We can create it using koax to compose middleware or with a simple generator
+
+```js
+function * app (evt) {
+  if (evt.type === REQUEST && evt.method ==== 'generator') {
+    return yield aws('DynamoDB', 'getItem', {Key: evt.payload, TableName: 'Stuff')
+  } else if (evt.type === REQUEST && evt.method ==== 'set') {
+    return yield aws('DynamoDB', 'setItem', {Item: evt.payload, TableName: 'Stuff'})
+  }
+}
+```
+
+
 
 ## Installation
 
     $ npm install koax
 
-## Usage
 
-```js
-import koax, {delay} from 'koax'
-
-let app = koax()
-
-app.use(function * (action, next) {
-  if (action === 'fetch') return yield Promise.resolve('google')
-  return next()
-})
-
-app.use(function * (action, next) {
-  if (action === 'foo') return 'foo ' + (yield 'fetch')
-  return 'qux'
-})
-
-app('fetch').then((res) => res) // => 'google'
-app('bar').then((res) => res) // => 'qux'
-app('foo').then((res) => res) // => 'foo google'
-
-app(function * () {
-  yield delay(50)
-  yield 'fetch' // => 'google'
-  yield delay(50)
-  yield 'bar' // => 'qux'
-  return 'woot'
-}).then(res => res) // => 'woot'
-
-```
 
 ## API
 
-### koax()
+### koax() (default)
 
 **Returns:** a koax app
 
@@ -71,11 +91,11 @@ app(function * () {
 
 **Returns:** koax app
 
-### .bind(ctx)
+### interpreter(koax)
 
-- `ctx` - bind koax app to a `ctx` - `ctx` can be accessed with the third argument in all middleware
+- `koax` - a koax interpeter stack
 
-**Returns:** koax app
+**Returns:** a function that interprets data passed to it. data can be an action or a koax app.
 
 ## Concepts
 
@@ -107,30 +127,7 @@ function * middleware (action, next, ctx) {
 
 Yield dispatches actions to the top of the middleware stack. Koax will handle "yieldables" (as defined by co) specially, with the intent of making them feel similar co. Objects are excluded from "yieldables" in koax, because object is the primary type used for standard actions.
 
-In addition to the standard "yieldables", koax can more generally process functors ...
 
-
-### Functors
-Functors implement map.
-
-An array is a functor. A plain object is not. This is good because, we don't want koax to do anything special with plain objects. We can however, coerce plain objects into functors, letting you define custom behavior for "yieldables". Here's an example:
-
-```js
-import koax from 'koax'
-import {fetch, fetchEffect} from '@koax/fetch'
-import ObjectF from '@f/obj-functor'
-
-let app = koax()
-
-app.use(fetchEffect)
-
-app(function * () {
-  yield ObjectF({
-    google: fetch('google.com'),
-    facebook: fetch('facebook.com')
-  }) // => {google: google, facebook: facebook}
-})
-```
 
 ## License
 

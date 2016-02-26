@@ -6,49 +6,43 @@ import run from '@koax/run'
 import compose from '@koax/compose'
 import promise from '@koax/promise'
 import thunk from '@koax/thunk'
-import {channelsEffect, take, put, close} from '@koax/channels'
-import {forkDriver, fork, join, cancel} from '@koax/fork'
-import {timingEffect, delay, timeout, interval} from '@koax/timing'
+import {forkEffect, fork, join, cancel} from '@koax/fork'
+import {timingEffect, delay} from '@koax/timing'
+import {boot} from '@koax/boot'
 import middleware from '@f/middleware'
 
+
 /**
- * ware
+ * Create a koax app
+ * @return {Function}
  */
 
-function koax () {
-  let app  = middleware(maybeBind)
+let koax = () => middleware(compose)
 
-  // use bind instead of maybeBind for middleware composition
-  app.bind = function (ctx) {
-    return app.replace(finalize(ctx))
-  }
+/**
+ * Create an interpter
+ * @param {Function} kx a koax stack
+ * @param {Object} ctx a gloabl context
+ * @return {Function} an interpreter
+ */
 
-  return app
+let interpreter = (kx, ctx) => {
+  let i = middleware(run(ctx))
 
-  // bind if root koax, otherwise compose
-  function maybeBind (mw) {
-    let composed
-    return function (action, next, ctx) {
-      if (!composed) {
-        if (!ctx) {
-          composed = finalize(ctx)(mw)
-        } else {
-          composed = compose(mw)
-        }
-      }
-      return composed(action, next, ctx)
+  i.use(promise)
+    .use(thunk)
+    .use(timingEffect)
+    .use(forkEffect(i))
+    .use(kx)
+
+  let booted = false
+  return function (action, next) {
+    if (!booted) {
+      booted = true
+      i(boot())
     }
+    return i(action, next)
   }
-}
-
-
-let finalize = ctx => middleware => {
-  ctx = ctx || {}
-  middleware.unshift(timingEffect)
-  middleware.unshift(channelsEffect())
-  middleware.unshift(thunk)
-  middleware.unshift(promise)
-  return forkDriver(run(middleware, ctx))
 }
 
 /**
@@ -56,4 +50,4 @@ let finalize = ctx => middleware => {
  */
 
 export default koax
-export {take, put, close, fork, join, cancel, delay, timeout, interval}
+export {interpreter, fork, join, delay, cancel}
