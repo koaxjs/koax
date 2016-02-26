@@ -33,7 +33,10 @@ let interpreter = (kx, ctx) => {
     .use(thunk)
     .use(timingEffect)
     .use(forkEffect(i))
-    .use(kx)
+
+  if (kx) {
+    i.use(kx)
+  }
 
   let booted = false
   return function (action, next) {
