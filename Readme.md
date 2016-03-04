@@ -6,28 +6,32 @@
 [![NPM version][npm-image]][npm-url]
 [![Code style][standard-image]][standard-url]
 
-Simple, powerful and composable interpreters and apps. Inspired by co, koa, and redux.
+Build apps by decoupling effects from application logic. Inspired by co, koa, redux and cycle.
 
-The goal of koax is to make it easy to build large apps where effects are decoupled from application logic. This makes apps easier to test, reason about, and inspect.
+The basic idea is that `main` can `yield` actions to the effects middleware stack, which can then process those actions. The effects middleware stack is composed of drivers that ineract with the outside world. Drivers can be sinks witch write to the outside world or sinks wich read from the outside world and dispatch actions to `main`. Koax is basically your app as a pausible circuit.
 
-There are three primary concepts in koax: `actions`, `koaxes`, and `interpreters`. Actions are typed payloads of data. Koaxes are generators that receive a single action as input and only yield effect actions. An intepreter processes effect actions.
+The basic building block of a koax app is a `koax`. A `koax` is just a generator that processes actions that is composed of `koax` middleware.
 
-At the outer most level, koax apps all basically have the same form, where app is a koax and the interpeter is built from a koax.
+At the outer most level, koax apps should basically have the same form.
 
 ```js
-interpet(app(action))
+import {run} from 'koax'
+import effects from './effects'
+import main from './app'
+
+run(effects, main)
 ```
 
-A koax is created by composing koax middleware.
+Effects and main are composed of koax middleware.
 
 ```js
 import koax from 'koax'
-import fetch from '@koax/fetch'
-import aws from '@koax/aws'
+import {fetchEffect} from '@koax/fetch'
+import {awsEffect} from '@koax/aws'
 
 let effects = koax()
-  .use(fetch)
-  .use(aws)
+  .use(fetchEffect())
+  .use(awsEffect())
   ...
 ```
 
@@ -42,28 +46,20 @@ function (action, next, ctx) {
 }
 ```
 
-We create an interpreter by passing a koax to the interperter.
-
-```js
-import {interpreter} from 'koax'
-
-let interpet = intepreter(effects)
-```
-
-The interpeter adds default effects middleware useful for control flow. These include:
+Effects will be added to the interpreter stack, which includes default control flow middlware:
 
 - [promise](//github.com/koaxjs/promise) - promise yielding
 - [thunk](//github.com/koaxjs/thunk) - thunk yielding
-- [timing](//github.com/koaxjs/timing) - delay and timeout
+- [timing](//github.com/koaxjs/timing) - delay
 - [fork](//github.com/koaxjs/fork) - async execution
 
 The action creators for these middleware are exposed by koax. They include: `fork`, `delay`, `join`, and `cancel`.
 
-Now we can create our app and process it using the interpreter. Remember we want our app to be a koax. We can create it using koax to compose middleware or with a simple generator
+Now we can create our main and process it using the interpreter. Remember we want our app to be a koax. We can create it using koax to compose middleware or with a simple generator
 
 ```js
-function * app (evt) {
-  if (evt.type === REQUEST && evt.method ==== 'generator') {
+function * main (evt) {
+  if (evt.type === REQUEST && evt.method ==== 'get') {
     return yield aws('DynamoDB', 'getItem', {Key: evt.payload, TableName: 'Stuff')
   } else if (evt.type === REQUEST && evt.method ==== 'set') {
     return yield aws('DynamoDB', 'setItem', {Item: evt.payload, TableName: 'Stuff'})
@@ -71,19 +67,79 @@ function * app (evt) {
 }
 ```
 
+Putting it all together (again)...
 
+```js
+
+let dispatch = run(effects, main)
+dispatch({type: REQUEST, method: 'get'}).then(res => res) // results
+```
 
 ## Installation
 
     $ npm install koax
 
+## Router
 
+A router example.
+
+app.js
+```js
+import koax from 'koax'
+import {route, request} from '@koax/route'
+import {fetchEffect} from '@koax/fetch'
+import {awsEffect, aws} from '@koax/aws'
+
+import {get} from '@koax/fetch-json'
+
+
+exports.effects = koax()
+  .use(fetchEffect())
+  .use(awsEffect())
+
+exports.main = koax()
+  .use(route('/pets.get', getPets))
+  .use(route('/pets.add', addPet))
+
+function * getPets ({params}) {
+  return yield aws('DynamoDB', 'getItem', {Key: {owner: params.owner}, TableName: 'Pets'})
+}
+
+function * addPet({param}) {
+  yield aws('DynamoDB', 'updateItem', {})
+}
+
+```
+
+For an http server, we could do:
+
+server.js
+```js
+import {run} from 'koax'
+import {effects, main} from './app'
+import {koaEffect} from '@koax/koa'
+
+effects.use(koaEffect())
+
+// since koaEffect is a source, requests will be dispatched to main
+run(effects, main)
+```
+
+Or for a lambda function, we could simply do:
+
+lambda.js
+```js
+import {run} from 'koax'
+import {effects, main} from './app'
+
+exports.handler = run(effects, main)
+```
 
 ## API
 
 ### koax() (default)
 
-**Returns:** a koax app
+**Returns:** a koax middleware stack
 
 ### .use(middleware)
 
@@ -91,9 +147,11 @@ function * app (evt) {
 
 **Returns:** koax app
 
-### interpreter(koax)
+### run(effects, main, ctx)
 
-- `koax` - a koax interpeter stack
+- `effects` - effects processing stack
+- `main` - main function or generator, signature: `main(action)`
+- `ctx` - ctx to pass to effects and main middleware
 
 **Returns:** a function that interprets data passed to it. data can be an action or a koax app.
 
@@ -125,9 +183,7 @@ function * middleware (action, next, ctx) {
 
 ### yield
 
-Yield dispatches actions to the top of the middleware stack. Koax will handle "yieldables" (as defined by co) specially, with the intent of making them feel similar co. Objects are excluded from "yieldables" in koax, because object is the primary type used for standard actions.
-
-
+`yield` dispatches actions to the interpreter. The interpreter is composed of the default control flow middleware and the effects stack.
 
 ## License
 

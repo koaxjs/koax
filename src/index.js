@@ -2,22 +2,24 @@
  * Imports
  */
 
-import run from '@koax/run'
-import compose from '@koax/compose'
+import middleware from '@f/middleware'
+import compose from '@f/compose'
+import identity from '@f/identity'
+import isObject from '@f/is-object'
+import koaxRun from '@koax/run'
+import koaxCompose from '@koax/compose'
 import promise from '@koax/promise'
 import thunk from '@koax/thunk'
 import {forkEffect, fork, join, cancel} from '@koax/fork'
 import {timingEffect, delay} from '@koax/timing'
-import {boot} from '@koax/boot'
-import middleware from '@f/middleware'
-
+import {boot, NEXT} from '@koax/driver'
 
 /**
  * Create a koax app
  * @return {Function}
  */
 
-let koax = () => middleware(compose)
+let koax = () => middleware(koaxCompose)
 
 /**
  * Create an interpter
@@ -26,26 +28,35 @@ let koax = () => middleware(compose)
  * @return {Function} an interpreter
  */
 
-let interpreter = (kx, ctx) => {
-  let i = middleware(run(ctx))
+let run = (effects, main, ctx) => {
+  if (isObject(main)) {
+    ctx = main
+    main = null
+  }
 
-  i.use(promise)
+  main = main || identity
+  ctx = ctx || {}
+
+  let interpreter = middleware(koaxRun(ctx))
+
+  interpreter.use(promise)
     .use(thunk)
     .use(timingEffect)
-    .use(forkEffect(i))
+    .use(forkEffect(interpreter))
 
-  if (kx) {
-    i.use(kx)
+  if (effects) {
+    interpreter.use(effects)
   }
 
-  let booted = false
-  return function (action, next) {
-    if (!booted) {
-      booted = true
-      i(boot())
+  let dispatch = compose(interpreter, main)
+  interpreter.use(function (action, next) {
+    if (action.type === NEXT) {
+      return dispatch(action.payload)
     }
-    return i(action, next)
-  }
+    return next()
+  })
+  interpreter(boot(ctx))
+  return dispatch
 }
 
 /**
@@ -53,4 +64,4 @@ let interpreter = (kx, ctx) => {
  */
 
 export default koax
-export {interpreter, fork, join, delay, cancel}
+export {run, fork, join, delay, cancel}

@@ -3,8 +3,9 @@
  */
 
 import test from 'tape'
-import koax, {fork, delay, interpreter} from '../src'
+import koax, {fork, delay, run} from '../src'
 import elapsed from '@f/elapsed-time'
+import driver, {BOOT} from '@koax/driver'
 
 /**
  * Tests
@@ -20,10 +21,10 @@ test('should dispatch', (t) => {
     return next()
   })
 
-  app = interpreter(app)
+  let dispatch = run(app)
 
-  app('foo').then((res) => t.equal(res, 'bar'))
-  app('qux').then((res) => t.equal(res, 'qux'))
+  dispatch('foo').then((res) => t.equal(res, 'bar'))
+  dispatch('qux').then((res) => t.equal(res, 'qux'))
 })
 
 test('should be mountable', (t) => {
@@ -45,11 +46,11 @@ test('should be mountable', (t) => {
   root.use(child1)
   root.use(child2)
 
-  root = interpreter(root)
+  let dispatch = run(root)
 
-  root('foo').then((res) => t.equal(res, 'bar'))
-  root('qux').then((res) => t.equal(res, 'bat'))
-  root('woot').then((res) => t.equal(res, 'woot'))
+  dispatch('foo').then((res) => t.equal(res, 'bar'))
+  dispatch('qux').then((res) => t.equal(res, 'bat'))
+  dispatch('woot').then((res) => t.equal(res, 'woot'))
 })
 
 test('should be able to access context from deeply nested middleware', (t) => {
@@ -70,11 +71,11 @@ test('should be able to access context from deeply nested middleware', (t) => {
   child1.use(child2)
   root.use(child1)
 
-  root = interpreter(root, {fetched: 'google'})
+  let dispatch = run(root, {fetched: 'google'})
 
-  root('foo').then((res) => t.equal(res, 'bar'))
-  root('qux').then((res) => t.equal(res, 'batgoogle'))
-  root('woot').then((res) => t.equal(res, 'woot'))
+  dispatch('foo').then((res) => t.equal(res, 'bar'))
+  dispatch('qux').then((res) => t.equal(res, 'batgoogle'))
+  dispatch('woot').then((res) => t.equal(res, 'woot'))
 })
 
 test('should reolve yielded promise', (t) => {
@@ -86,7 +87,7 @@ test('should reolve yielded promise', (t) => {
     return 'qux'
   })
 
-  app = interpreter(app)
+  app = run(app)
 
   app('foo').then(function (res) {
     t.equal(res, 'bar')
@@ -110,7 +111,7 @@ test('should resolve yielded action promise', (t) => {
     return 'qux'
   })
 
-  app = interpreter(app)
+  app = run(app)
 
   app('foo').then(function (res) {
     t.equal(res, 'foo google')
@@ -138,7 +139,7 @@ test('should resolve yielded action thunk', (t) => {
     return 'qux'
   })
 
-  app = interpreter(app)
+  app = run(app)
 
   function thunk (cb) {
     cb(null, 'google')
@@ -162,7 +163,7 @@ test('should have fork support', (t) => {
 
   let finished = false
 
-  let app = interpreter(koax())
+  let app = run(koax())
 
   app(function * () {
     yield fork(getBar)
@@ -170,6 +171,8 @@ test('should have fork support', (t) => {
   }).then(function (val) {
     t.equal(val, 'woot')
     finished = true
+  }).catch(function (err) {
+    console.log('err', err)
   })
 
   function * getBar () {
@@ -185,7 +188,7 @@ test('should have fork support', (t) => {
 })
 
 test('should have delay support', (t) => {
-  let dispatch = interpreter(koax())
+  let dispatch = run(koax())
   let time = elapsed()
   time()
   dispatch(function * () {
@@ -194,4 +197,46 @@ test('should have delay support', (t) => {
     t.ok(time() >= 50)
     t.end()
   })
+})
+
+test('should run dispatched actions through main', (t) => {
+  t.plan(2)
+
+  let dispatch = run(koax(), function * main (action) {
+    yield delay(100)
+    if (action.type === 'woot')
+      return 'foo'
+    else
+      return 'bar'
+  })
+
+  dispatch({type: 'woot'}).then(val => t.equal('foo', val))
+  dispatch({type: 'what'}).then(val => t.equal('bar', val))
+})
+
+test('should run pushed actions through main', (t) => {
+  t.plan(2)
+
+  let {drive, push} = driver()
+
+  let effects = koax()
+    .use(function (action, next) {
+      if (action.type === BOOT) {
+        return drive(function (val) {
+          return {type: 'PUSH', payload: val}
+        })
+      }
+      return next()
+    })
+
+  let dispatch = run(effects, function * main (action) {
+    yield delay(100)
+    if (action.type === 'PUSH')
+      return 'foo ' + action.payload
+    else
+      return 'bar'
+  })
+
+  push(1).then(val => t.equal('foo 1', val))
+  dispatch({type: 'what'}).then(val => t.equal('bar', val))
 })

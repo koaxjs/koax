@@ -11,11 +11,14 @@
     "postversion": "git push && git push --tags && npm publish --access=public"
   },
   "dependencies": {
+    "@f/compose": "^1.0.1",
+    "@f/is-object": "^1.1.4",
     "@f/middleware": "^1.1.0",
     "@koax/boot": "^1.0.0",
     "@koax/channels": "^0.1.2",
     "@koax/compose": "^0.3.1",
-    "@koax/fork": "^0.3.0",
+    "@koax/driver": "^0.2.1",
+    "@koax/fork": "^0.3.1",
     "@koax/promise": "^1.0.0",
     "@koax/run": "^0.3.0",
     "@koax/thunk": "^1.0.1",
