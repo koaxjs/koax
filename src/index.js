@@ -34,6 +34,7 @@ let run = (effects, main, ctx) => {
     main = null
   }
 
+  main = main || identity
   ctx = ctx || {}
 
   let interpreter = middleware(koaxRun(ctx))
@@ -47,19 +48,14 @@ let run = (effects, main, ctx) => {
     interpreter.use(effects)
   }
 
-  let dispatch
-  if (main) {
-    dispatch = compose(interpreter, main)
-    interpreter.use(function (action, next) {
-      if (action.type === NEXT) {
-        return dispatch(action.payload)
-      }
-      return next()
-    })
-  } else {
-    dispatch = interpreter
-  }
 
+  let dispatch = compose(interpreter, main)
+  interpreter.use(function (action, next) {
+    if (action.type === NEXT) {
+      return dispatch(action.payload)
+    }
+    return next()
+  })
   interpreter(boot(ctx))
   return dispatch
 }

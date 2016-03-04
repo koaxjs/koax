@@ -116,25 +116,15 @@ For an http server, we could do:
 
 server.js
 ```js
-import {run} from 'koax'
-import {effects, main} from './app'
-import {koaEffect} from '@koax/koa'
+import app from './app'
+import koa from 'koa'
 
-effects.use(koaEffect())
-
-// since koaEffect is a source, requests will be dispatched to main
-run(effects, main)
+let server = koa()
+server.use(function * () {
+  this.body = yield app(request(this.request.url, this.request.params, this.request.headers))
+})
 ```
 
-Or for a lambda function, we could simply do:
-
-lambda.js
-```js
-import {run} from 'koax'
-import {effects, main} from './app'
-
-exports.handler = run(effects, main)
-```
 
 ## API
 
