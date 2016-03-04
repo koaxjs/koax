@@ -85,21 +85,22 @@ A router example.
 
 app.js
 ```js
-import koax from 'koax'
+import koax, {run} from 'koax'
 import {route, request} from '@koax/route'
 import {fetchEffect} from '@koax/fetch'
 import {awsEffect, aws} from '@koax/aws'
-
 import {get} from '@koax/fetch-json'
 
 
-exports.effects = koax()
+let effects = koax()
   .use(fetchEffect())
   .use(awsEffect())
 
-exports.main = koax()
+let main = koax()
   .use(route('/pets.get', getPets))
   .use(route('/pets.add', addPet))
+
+module.exports = run(effects, main)
 
 function * getPets ({params}) {
   return yield aws('DynamoDB', 'getItem', {Key: {owner: params.owner}, TableName: 'Pets'})
