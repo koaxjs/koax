@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@f/compose": "^1.0.1",
+    "@f/identity": "^1.1.1",
     "@f/is-object": "^1.1.4",
     "@f/middleware": "^1.1.0",
     "@koax/boot": "^1.0.0",
