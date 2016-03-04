@@ -8,9 +8,9 @@
 
 Build apps by decoupling effects from application logic. Inspired by co, koa, redux and cycle.
 
-The basic idea is that `main` can `yield` actions to the effects middleware stack, which can then process those actions. The effects middleware stack is composed of drivers that ineract with the outside world. Drivers can be sinks witch write to the outside world or sinks wich read from the outside world and dispatch actions to `main`. Koax is basically your app as a pausible circuit.
+The basic idea is that your `main` can `yield` effects to your interperter stack. Actions are dispatched to main by either dispatching directly or by adding drivers to the effects stack, which dispatch to main.
 
-The basic building block of a koax app is a `koax`. A `koax` is just a generator that processes actions that is composed of `koax` middleware.
+The basic building block of a koax app is a `koax`. A `koax` is a generator that processes actions and is composed of `koax` middleware.
 
 At the outer most level, koax apps should basically have the same form.
 
@@ -19,7 +19,7 @@ import {run} from 'koax'
 import effects from './effects'
 import main from './app'
 
-run(effects, main)
+let dispatch = run(effects, main)
 ```
 
 Effects and main are composed of koax middleware.
