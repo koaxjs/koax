@@ -12,7 +12,6 @@ import promise from '@koax/promise'
 import thunk from '@koax/thunk'
 import {forkEffect, fork, join, cancel} from '@koax/fork'
 import {timingEffect, delay} from '@koax/timing'
-import {boot, NEXT} from '@koax/driver'
 
 /**
  * Create a koax app
@@ -34,7 +33,6 @@ let run = (effects, main, ctx) => {
     main = null
   }
 
-  main = main || identity
   ctx = ctx || {}
 
   let interpreter = middleware(koaxRun(ctx))
@@ -48,16 +46,11 @@ let run = (effects, main, ctx) => {
     interpreter.use(effects)
   }
 
-
-  let dispatch = compose(interpreter, main)
-  interpreter.use(function (action, next) {
-    if (action.type === NEXT) {
-      return dispatch(action.payload)
-    }
-    return next()
-  })
-  interpreter(boot(ctx))
-  return dispatch
+  if (!main) {
+    return interpreter
+  } else {
+    return compose(interpreter, main)
+  }
 }
 
 /**
