@@ -118,6 +118,7 @@ server.js
 ```js
 import app from './app'
 import koa from 'koa'
+import {request} from '@koax/route'
 
 let server = koa()
 server.use(function * () {
@@ -125,6 +126,17 @@ server.use(function * () {
 })
 ```
 
+Or a lambda would look like:
+
+index.js
+```js
+import L from 'apex.js'
+import 'babel-polyfill'
+import app from './app'
+
+exports.handler = L(e => app(request(e.url, e.params. e.headers)))
+
+```
 
 ## API
 
