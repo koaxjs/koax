@@ -8,9 +8,9 @@
 
 Build apps by decoupling effects from application logic. Inspired by co, koa, redux and cycle.
 
-The basic idea is that your `main` can `yield` effects to your interperter stack. Actions are dispatched to main by either dispatching directly or by adding drivers to the effects stack, which dispatch to main.
+The basic idea is that your `main` can `yield` effects to your interperter stack.
 
-The basic building block of a koax app is a `koax`. A `koax` is a generator that processes actions and is composed of `koax` middleware.
+The basic building block of a koax app is a `koax`. A `koax` is a generator that processes an action and is composed of `koax` middleware.
 
 At the outer most level, koax apps should basically have the same form.
 
@@ -55,7 +55,7 @@ Effects will be added to the interpreter stack, which includes default control f
 
 The action creators for these middleware are exposed by koax. They include: `fork`, `delay`, `join`, and `cancel`.
 
-Now we can create our main and process it using the interpreter. Remember we want our app to be a koax. We can create it using koax to compose middleware or with a simple generator
+Now we can create our main and process it using the interpreter.
 
 ```js
 function * main (evt) {
