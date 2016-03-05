@@ -5,7 +5,6 @@
 import test from 'tape'
 import koax, {fork, delay, run} from '../src'
 import elapsed from '@f/elapsed-time'
-import driver, {BOOT} from '@koax/driver'
 
 /**
  * Tests
